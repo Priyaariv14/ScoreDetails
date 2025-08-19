@@ -1,0 +1,82 @@
+spring:
+  application:
+    name: cricket-details-service
+    port : 8080
+    
+  profiles:
+    active: dev
+
+  datasource:
+        url: jdbc:h2:mem:testDB;DB_CLOSE_ON_EXIT=false;DB_CLOSE_DELAY=-1
+        driver-class-name: org.h2.Driver
+        username: sa
+        password: 
+  jpa:
+        hibernate:
+            ddl-auto: create-drop
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.H2Dialect
+  h2:
+        console:
+            enabled: true     
+            path: /h2-console
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      retries: 3
+      properties:
+        enable.idempotence: true
+    consumer:
+      group-id: cricket-consumer
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    listener:
+      ack-mode: record
+  app:
+    kafka:
+      mainTopic: user-scores.v1
+      dlqTopic: user-scores.dlq
+    outbox:
+      maxRetries: 5
+      retryBackOffMillis: 1000
+      batchSize: 20
+      poll-interval-ms: 2000   
+        
+jwt:
+  secret: your-very-secure-secret-key-that-is-very-long-and-random
+  expiration: 86400000 # 1 day
+
+logging:
+  level:
+    org.springdoc: DEBUG
+    com.fasterxml.jackson: DEBUG
+    
+resilience4j:
+  retry:
+    userServiceRetry:
+      max-attempts: 3
+      wait-duration: 2s
+      retry-exceptions:
+        - java.lang.RuntimeException
+
+  circuitbreaker:
+    userServiceCB:
+      register-health-indicator: true
+      sliding-window-type: COUNT_BASED
+      sliding-window-size: 5
+      minimum-number-of-calls: 3
+      failure-rate-threshold: 50
+      wait-duration-in-open-state: 5s
+
+  ratelimiter:
+    instances:
+      myServiceLimiter:
+        limit-for-period: 5        # max 5 requests
+        limit-refresh-period: 10s  # every 10 seconds
+        timeout-duration: 0        # fail immediately if limit exceeded
