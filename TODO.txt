@@ -1,0 +1,3 @@
+Create a AI model to do score analysis.
+Load it in any cloud/GCP/Azure/AWS
+Connect it form this app .
